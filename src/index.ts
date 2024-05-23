@@ -32,6 +32,11 @@ Bun.serve({
                 }
             });
 
+        } else if (path.startsWith("/preview")) {
+            let page = await Bun.file(`${import.meta.dir}/preview/index.html`).text();
+            return new Response(page, {
+                headers
+            });
         }
 
         switch (path) {
@@ -52,4 +57,4 @@ Bun.serve({
     }
 })
 
-console.log("Server running");
+console.log("Server running on http://localhost:3200");

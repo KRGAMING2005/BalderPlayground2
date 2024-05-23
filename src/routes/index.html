@@ -9,10 +9,12 @@
     <script src="/script/ws.js" defer></script>
 </head>
 <body>
-    <div id="editor-container"></div>
-    <input type="text" id="message">
-    <button id="send">Skicka</button>
+    <main>
+        <div id="editor-container"></div>
+        <iframe src="http://localhost:3200/preview" title="preview" id="preview"></iframe>
+    </main>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/loader.js"></script>
     <script src="/script/monaco.js"></script>
+    <script src="/script/test.js"></script>
 </body>
 </html>
