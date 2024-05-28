@@ -10,7 +10,7 @@
     <p id="userId" hidden><%= it.userId %></p>
     <main>
         <div id="editor-container"></div>
-        <iframe src="http://localhost:3200/preview/<%= it.userId %>" title="preview" id="preview"></iframe>
+        <iframe src="http://localhost:3200/preview/<%= it.userId %>/" title="preview" id="preview"></iframe>
     </main>
     <script src="/script/ws.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/loader.js"></script>

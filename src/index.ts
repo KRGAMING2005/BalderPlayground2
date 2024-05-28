@@ -49,11 +49,13 @@ Bun.serve({
         headers.set("set-cookie", `sessionId=${sessionId};SameSite=Strict`);
         
         if (path.startsWith("/preview")) {
-            let reqeustedFile: string | null = null;
-            if (path == `/preview/${userId}`) reqeustedFile = "index.html";
-            if (reqeustedFile == null) return new Response(null, { status: 404 });
+            let requestedFile: string = "never defined";
+            if (requestedFile == "never defined") requestedFile = url.toString().split("/").pop() ?? "split failed";
+            if (requestedFile == ``) requestedFile = "index.html";
 
-            const file = Bun.file(`${previewFolder}${reqeustedFile}`);
+            console.log(requestedFile);
+
+            const file = Bun.file(`${previewFolder}${requestedFile}`);
             
             if (await file.exists()) {
                 return new Response(await file.text(), {
@@ -62,7 +64,7 @@ Bun.serve({
                     }
                 });
             }else {
-                return new Response(null, { status: 404 });
+                return new Response("404", { status: 404 });
             }
         }
 
@@ -106,8 +108,10 @@ Bun.serve({
             const typescript = fileContents.join("\n");
 
             await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, typescript);
-            const resp = await $`whoami`;
-            console.log({resp});
+            exec(`tsc ${import.meta.dir}/preview/${user}/script.ts --outfile ${import.meta.dir}/preview/${user}/script.js`);
+            console.log("Ran compile")
+            //TODO: Wait for compile to finish.
+            ws.send(JSON.stringify({reload: true}))
         }
     }
 })
