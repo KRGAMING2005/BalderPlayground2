@@ -1,5 +1,7 @@
 import { Eta } from "eta";
 import path from "path";
+import { exec } from "child_process";
+import { $, FileSystemRouter } from "bun";
 
 interface Cookies {
     [key: string]: string;
@@ -15,7 +17,11 @@ function parseCookies(cookieString: string): Cookies {
 
 const eta = new Eta({views: path.join(import.meta.dir, "/routes")});
 
+let userId = "f8f4b2b7-b016-418b-b80b-c36630badc64";
+
 const sessions: Record<string, Record<string, unknown>> = {};
+
+const previewFolder = `${import.meta.dir}/preview/${userId}/`;
 
 Bun.serve({
     port: 3200,
@@ -34,15 +40,31 @@ Bun.serve({
         if (!sessions[sessionId]) sessions[sessionId] = {};
 
         const session = sessions[sessionId];
+        
+        const upgradeSuccess = server.upgrade(req);
+        if (upgradeSuccess) return new Response(undefined);
 
         const headers = new Headers();
         headers.set("Content-Type", "text/html");
-        headers.set("set-cookie", `sessionId=${sessionId}`);
+        headers.set("set-cookie", `sessionId=${sessionId};SameSite=Strict`);
         
-        console.log({sessionId})
+        if (path.startsWith("/preview")) {
+            let reqeustedFile: string | null = null;
+            if (path == `/preview/${userId}`) reqeustedFile = "index.html";
+            if (reqeustedFile == null) return new Response(null, { status: 404 });
 
-        const upgradeSuccess = server.upgrade(req);
-        if (upgradeSuccess) return new Response(undefined);
+            const file = Bun.file(`${previewFolder}${reqeustedFile}`);
+            
+            if (await file.exists()) {
+                return new Response(await file.text(), {
+                    headers: {
+                        'content-type': file.type
+                    }
+                });
+            }else {
+                return new Response(null, { status: 404 });
+            }
+        }
 
         if (path.startsWith("/script")) {
             const fileName = url.toString().split("/").pop();
@@ -61,17 +83,12 @@ Bun.serve({
                 }
             });
 
-        } else if (path.startsWith("/preview")) {
-            let page = await Bun.file(`${import.meta.dir}/preview/index.html`).text();
-            return new Response(page, {
-                headers
-            });
         }
 
         switch (path) {
             case "/": {
                 // let index = await Bun.file(`${import.meta.dir}/routes/index.html`).text();
-                return new Response(await eta.renderAsync("index.eta", {}), {headers});
+                return new Response(await eta.renderAsync("index.eta", { userId }), {headers});
                 // return new Response(index, {
                 //     headers
                 // });
@@ -81,8 +98,16 @@ Bun.serve({
     },
     websocket: {
         async message(ws, message) {
-            console.log(`Message: ${message}`);
-            ws.send("Pong: " + message)
+            let data: { user: string, fileContents: string[] } = JSON.parse(message as string);
+
+            const user: string = data.user;
+            const fileContents: string[] = data.fileContents;
+
+            const typescript = fileContents.join("\n");
+
+            await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, typescript);
+            const resp = await $`whoami`;
+            console.log({resp});
         }
     }
 })

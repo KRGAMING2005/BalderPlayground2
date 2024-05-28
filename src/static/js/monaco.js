@@ -1,4 +1,5 @@
 let preview = document.getElementById("preview");
+let userId = document.getElementById("userId").innerText;
 
 require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs' } });
 
@@ -18,7 +19,8 @@ require(['vs/editor/editor.main'], function () {
 
     editor.onDidChangeModelContent((e) => {
         preview.src = preview.src + "";
-        ws.send(JSON.stringify(editor.getValue().split("\n")));
+        let JSONData = { user: userId, fileContents: editor.getValue().split("\n") };
+        ws.send(JSON.stringify(JSONData));
     })
     
 });
