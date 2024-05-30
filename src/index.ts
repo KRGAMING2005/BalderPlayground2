@@ -1,7 +1,11 @@
 import { Eta } from "eta";
 import path from "path";
 import { exec } from "child_process";
-import { $, FileSystemRouter } from "bun";
+import { $, FileSystemRouter, sleep } from "bun";
+import { TypescriptParser } from "typescript-parser";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 interface Cookies {
     [key: string]: string;
@@ -53,8 +57,6 @@ Bun.serve({
             if (requestedFile == "never defined") requestedFile = url.toString().split("/").pop() ?? "split failed";
             if (requestedFile == ``) requestedFile = "index.html";
 
-            console.log(requestedFile);
-
             const file = Bun.file(`${previewFolder}${requestedFile}`);
             
             if (await file.exists()) {
@@ -89,11 +91,7 @@ Bun.serve({
 
         switch (path) {
             case "/": {
-                // let index = await Bun.file(`${import.meta.dir}/routes/index.html`).text();
                 return new Response(await eta.renderAsync("index.eta", { userId }), {headers});
-                // return new Response(index, {
-                //     headers
-                // });
             }
         }
         return new Response("Bink bonk");
@@ -105,15 +103,43 @@ Bun.serve({
             const user: string = data.user;
             const fileContents: string[] = data.fileContents;
 
-            const typescript = fileContents.join("\n");
+            const code = fileContents.join("\n");
+            
+            await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, code);
+            sleep(500);
+            if (await isValidTypeScript(`${import.meta.dir}/preview/${user}/script.ts`)) {
+                try {
+                    exec(`tsc ${import.meta.dir}/preview/${user}/script.ts --outfile ${import.meta.dir}/preview/${user}/script.js`, (error, stdout, stderr) => {
+                        if (error) {
+                        console.error(`Error: ${error.message}`);
+                        return;
+                        }
+                        
+                        if (stderr) {
+                        console.error(`stderr: ${stderr}`);
+                        return;
+                        }
+                    
+                        console.log("Working code");
+                        ws.send(JSON.stringify({reload: true}))
+                    });
+                } catch (error) {
+                    console.log({error});
+                }
+            }else {
+                console.log("Invalid code: " + code);
+            }
 
-            await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, typescript);
-            exec(`tsc ${import.meta.dir}/preview/${user}/script.ts --outfile ${import.meta.dir}/preview/${user}/script.js`);
-            console.log("Ran compile")
-            //TODO: Wait for compile to finish.
-            ws.send(JSON.stringify({reload: true}))
         }
     }
 })
+
+
+async function isValidTypeScript(filePath: string): Promise<boolean> {
+    const { stderr } = await execAsync(`tsc --noEmit ${filePath}`);
+    if (stderr) return false;
+    return true;
+}
+
 
 console.log("Server running on http://localhost:3200");
