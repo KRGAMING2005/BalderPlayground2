@@ -2,10 +2,6 @@ import { Eta } from "eta";
 import path from "path";
 import { exec } from "child_process";
 import { $, FileSystemRouter, sleep } from "bun";
-import { TypescriptParser } from "typescript-parser";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 interface Cookies {
     [key: string]: string;
@@ -136,9 +132,10 @@ Bun.serve({
 
 
 async function isValidTypeScript(filePath: string): Promise<boolean> {
-    const { stderr } = await execAsync(`tsc --noEmit ${filePath}`);
-    if (stderr) return false;
-    return true;
+    exec(`tsc --noEmit ${filePath}`, (error, stdout, stderr) => {
+        if (error || stderr) return false;
+        if (stdout) return true;
+    });
 }
 
 
