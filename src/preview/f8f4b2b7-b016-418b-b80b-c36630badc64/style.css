@@ -1,0 +1,113 @@
+/* 7.2.1 */
+html {
+    height: 100%;
+    display: flex;
+    color-scheme: light dark;
+}
+
+body {
+    flex: 1;
+    display: flex;
+    flex-flow: column;
+    gap: 0.25em;
+}
+
+#io {
+    &:empty {
+        display: none;
+    }
+
+    .output {
+        font-family: consolas, monospace;
+        white-space: pre-wrap;
+        line-break: anywhere;
+    }
+
+    .input {
+        font-family: consolas, monospace;
+        white-space: pre-wrap;
+    }
+
+    .input>b {
+        line-break: anywhere;
+        outline: none;
+    }
+}
+
+#ui {
+    position: relative;
+
+    &:empty {
+        display: none;
+    }
+
+    output:empty {
+        border-left: dotted;
+
+        &::before {
+            content: '\200B';
+        }
+    }
+
+    fieldset {
+        width: fit-content;
+        margin: 0.5em 0;
+    }
+
+    label {
+        &.block {
+            display: flex;
+            margin: 0.25em 0;
+        }
+
+        &.inline {
+            display: inline-flex;
+            margin: 0.25em 0.5em 0.25em 0;
+
+            &:last-of-type {
+                margin-right: 0;
+            }
+        }
+
+        &.top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        &.right {
+            flex-direction: row-reverse;
+            gap: 0.25em;
+            justify-content: flex-end;
+        }
+
+        &.bottom {
+            flex-direction: column-reverse;
+            align-items: flex-start;
+        }
+
+        &.left {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 0.25em;
+        }
+    }
+}
+
+#canvas {
+    flex: 1;
+    min-height: 150px;
+
+    &:focus {
+        outline: dotted;
+    }
+}
+
+.error {
+    background-color: red;
+    color: white;
+    position: fixed;
+    bottom: 4px;
+    left: 0;
+    width: 100%;
+    z-index: 1
+}

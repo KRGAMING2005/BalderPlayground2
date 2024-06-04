@@ -2,7 +2,9 @@
   "name": "balderplayground2",
   "module": "index.ts",
   "dependencies": {
-    "eta": "^3.4.0"
+    "eta": "^3.4.0",
+    "typescript": "^5.4.5",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@types/bun": "latest"

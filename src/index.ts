@@ -1,11 +1,13 @@
 import { Eta } from "eta";
 import path from "path";
 import { exec } from "child_process";
-import { $, FileSystemRouter, sleep } from "bun";
+import { transpile } from "typescript";
+import { promisify } from "util";
 
 interface Cookies {
     [key: string]: string;
 }
+
 
 function parseCookies(cookieString: string): Cookies {
     return cookieString.split(';').reduce((cookies: any, cookie: any) => {
@@ -94,49 +96,32 @@ Bun.serve({
     },
     websocket: {
         async message(ws, message) {
-            let data: { user: string, fileContents: string[] } = JSON.parse(message as string);
+            let msg: any = JSON.parse(message as string);
 
-            const user: string = data.user;
-            const fileContents: string[] = data.fileContents;
+            if (msg.fileContents) {
+                let data: { user: string, fileContents: string[] } = msg;
+                const user: string = data.user;
+                const fileContents: string[] = data.fileContents;
+    
+                let code = fileContents.join("\n");
+                
+                let filePath = `${import.meta.dir}/preview/${user}/script.js`;
 
-            const code = fileContents.join("\n");
-            
-            await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, code);
-            sleep(500);
-            if (await isValidTypeScript(`${import.meta.dir}/preview/${user}/script.ts`)) {
-                try {
-                    exec(`tsc ${import.meta.dir}/preview/${user}/script.ts --outfile ${import.meta.dir}/preview/${user}/script.js`, (error, stdout, stderr) => {
-                        if (error) {
-                        console.error(`Error: ${error.message}`);
-                        return;
-                        }
-                        
-                        if (stderr) {
-                        console.error(`stderr: ${stderr}`);
-                        return;
-                        }
-                    
-                        console.log("Working code");
-                        ws.send(JSON.stringify({reload: true}))
-                    });
-                } catch (error) {
-                    console.log({error});
-                }
-            }else {
-                console.log("Invalid code: " + code);
+                await Bun.write(`${import.meta.dir}/preview/${user}/script.ts`, code)
+                code = transpile(code, undefined);
+                await Bun.write(filePath, code);
+                ws.send(JSON.stringify({reload: true}))
             }
 
+            if (msg.resume) {
+                let data: { userId: string, resume: boolean } = msg;
+                const user: string = data.userId;
+                
+                const code = await Bun.file(`${import.meta.dir}/preview/${user}/script.ts`).text();
+                ws.send(JSON.stringify({resume: true, content: code.split("\n")}));
+            }
         }
     }
 })
-
-
-async function isValidTypeScript(filePath: string): Promise<boolean> {
-    exec(`tsc --noEmit ${filePath}`, (error, stdout, stderr) => {
-        if (error || stderr) return false;
-        if (stdout) return true;
-    });
-}
-
 
 console.log("Server running on http://localhost:3200");

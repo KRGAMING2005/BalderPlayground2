@@ -1,5 +1,3 @@
-let userId = document.getElementById("userId").innerText;
-
 require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
@@ -11,12 +9,12 @@ require(['vs/editor/editor.main'], function () {
     });
 
     var editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: 'console.log("Hello World");',
+        value: baseContents,
         language: 'typescript',
         theme: 'vs-dark'
     });
 
-    editor.onDidChangeModelContent((e) => {
+    editor.onDidChangeModelContent(() => {
         preview.src = preview.src + "";
         let JSONData = { user: userId, fileContents: editor.getValue().split("\n") };
         ws.send(JSON.stringify(JSONData));
