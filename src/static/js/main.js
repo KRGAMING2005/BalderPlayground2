@@ -21,6 +21,10 @@ require(['vs/editor/editor.main'], function () {
         theme: 'vs-dark'
     });
 
+    monaco.editor.lanugages.typescript.addExtraLibs(`
+        declare function dot(x:number, y:number): void;
+    `)
+
     editor.onDidChangeModelContent((e) => {
         preview.src = preview.src + "";
         let JSONData = { user: userId, fileContents: editor.getValue().split("\n") };
